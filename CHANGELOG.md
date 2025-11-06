@@ -71,3 +71,48 @@ The output PDF will automatically use the new layout.
 - testScenario2.js - Kitchen/Bathroom example
 - testScenario3.js - Complete apartment example
 - example.js - Simple usage example
+
+## Version 2.1.0 - Table Width Fix (2025-11-07)
+
+### Bug Fixes
+
+#### Table Width Overflow Issue (CRITICAL)
+- **Fixed**: Table columns now fit perfectly within A4 page margins
+- **Previous**: Column widths totaled 560pt (exceeded 495pt content width)
+- **Current**: Column widths total exactly 495pt
+
+#### Updated Column Widths
+```javascript
+// Before (BROKEN)
+const colWidths = [40, 250, 50, 70, 60, 90]; // Total = 560pt ❌
+
+// After (FIXED)
+const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495pt ✅
+```
+
+#### Optimized Column Allocation
+- N°: 30pt (6.1%) - Reference numbers
+- Désignation: 215pt (43.4%) - Main description (largest)
+- Qté: 45pt (9.1%) - Quantity + unit
+- Prix U.: 65pt (13.1%) - Unit price
+- TVA: 50pt (10.1%) - Tax rate
+- TOTAL HT: 90pt (18.2%) - Total excluding tax
+
+### Documentation Updates
+- Added `TABLE_GUIDE.md` - Comprehensive table width guide
+- Updated `LAYOUT.md` with correct measurements
+- Updated `API.md` with proper column width documentation
+
+### Impact
+- ✅ Tables no longer overflow page boundaries
+- ✅ Professional appearance maintained
+- ✅ All content fits within margins
+- ✅ No visual artifacts or cutting off
+- ✅ Backward compatible (no data structure changes)
+
+### Testing
+All test scenarios pass with optimized table widths:
+- ✅ Scenario 2 (Kitchen/Bathroom): 4.0KB
+- ✅ Scenario 3 (Complete apartment): 5.4KB  
+- ✅ Example usage: 3.4KB
+

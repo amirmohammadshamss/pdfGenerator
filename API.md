@@ -240,12 +240,13 @@ const doc = new PDFDocument({
 ```
 
 ### Column Widths
-Default: `[40, 240, 50, 70, 60, 90]`
+Default: `[30, 215, 45, 65, 50, 90]` (Total = 495pt for A4)
 
-Change in `generateDevis` function (line 355):
+Change in `generateDevis` function (line 344):
 ```javascript
-const colWidths = [40, 240, 50, 70, 60, 90];
-// Adjust values as needed
+const colWidths = [30, 215, 45, 65, 50, 90];
+// IMPORTANT: Total must be ≤ 495pt to fit A4 page with 50pt margins
+// Adjust values as needed, but keep sum ≤ 495
 ```
 
 ### Colors

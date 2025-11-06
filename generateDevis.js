@@ -338,7 +338,10 @@ function generateDevis(data, outputPath = 'devis.pdf') {
   // ===== TABLE =====
   const tableTop = yPosition;
   const tableHeaders = ['N°', 'Désignation', 'Qté', 'Prix U.', 'TVA', 'TOTAL HT'];
-  const colWidths = [40, 200, 50, 70, 60, 90];
+
+  // Calculate column widths to fit page width
+  // Total contentWidth ≈ 495 points (A4 with 50pt margins)
+  const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495
   const colPositions = [];
 
   let xPos = margin;

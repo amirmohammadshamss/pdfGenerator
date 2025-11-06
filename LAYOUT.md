@@ -82,12 +82,27 @@
 | Element | Spacing |
 |---------|---------|
 | Page margins | 50pt (≈1.76cm) |
+| Content width | 495pt (A4 width - margins) |
 | Part 1 to Part 2 | 8cm (≈226pt) |
 | Part 2 to Part 3 | 2cm (≈56pt) |
 | Logo height | 4cm (≈113pt) |
 | Title font size | 13pt |
 | DEVIS font size | 24pt |
 | Body text | 11pt |
+
+## Table Column Widths
+
+The table columns are optimized to fit within the 495pt content width:
+
+| Column | Width | Purpose |
+|--------|-------|---------|
+| N° | 30pt | Reference number |
+| Désignation | 215pt | Description (largest column) |
+| Qté | 45pt | Quantity + unit |
+| Prix U. | 65pt | Unit price |
+| TVA | 50pt | Tax rate % |
+| TOTAL HT | 90pt | Total excluding tax |
+| **TOTAL** | **495pt** | Fits perfectly in content width |
 
 ## Color Scheme
 
@@ -164,8 +179,8 @@ yPosition += 56; // Change 56 for different spacing
 // Line 229: Adjust logo height
 const logoHeight = 113; // 4cm, change as needed
 
-// Line 355: Adjust table column widths
-const colWidths = [40, 240, 50, 70, 60, 90];
+// Line 344: Adjust table column widths (must total ≤ 495 for A4)
+const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495
 ```
 
 ## Comparison with Flutter Version
