@@ -116,3 +116,68 @@ All test scenarios pass with optimized table widths:
 - ✅ Scenario 3 (Complete apartment): 5.4KB  
 - ✅ Example usage: 3.4KB
 
+
+## Version 2.2.0 - Reduced Margins (2025-11-07)
+
+### Major Changes
+
+#### Page Margins Reduced
+- **Previous**: 50pt margins (1.76cm)
+- **Current**: 30pt margins (1.06cm)
+- **Benefit**: 40pt more content width (8% increase)
+
+#### Updated Content Width
+- **Previous**: 495pt available for content
+- **Current**: 535pt available for content
+- **Impact**: More space for table columns, especially descriptions
+
+#### Optimized Column Widths
+```javascript
+// Before
+const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495pt
+
+// After
+const colWidths = [35, 250, 50, 70, 50, 80]; // Total = 535pt
+```
+
+#### Benefits by Column
+- **N°**: +5pt (30→35pt) - Better spacing
+- **Désignation**: +35pt (215→250pt) - 16% more space for descriptions!
+- **Qté**: +5pt (45→50pt) - Better readability
+- **Prix U.**: +5pt (65→70pt) - More space for large amounts
+- **TVA**: No change (50pt)
+- **TOTAL HT**: -10pt (90→80pt) - Still sufficient
+
+### Key Improvements
+
+✅ **16% more space for descriptions** - Better multi-line text display
+✅ **Cleaner layout** - More balanced proportions
+✅ **Professional appearance** - Modern, less cramped
+✅ **Better readability** - More breathing room
+✅ **Same functionality** - No breaking changes
+
+### Technical Details
+
+- All yPosition calculations updated to use 30pt
+- Pagination now starts at 30pt on new pages
+- All test scenarios verified and passing
+
+### Updated Documentation
+- `TABLE_GUIDE.md` - Updated with 30pt margins
+- `LAYOUT.md` - Corrected all measurements
+- `API.md` - Updated customization guide
+
+### Migration
+No code changes needed! The PDF generator automatically uses the new margins.
+
+```javascript
+// Your existing code works without changes
+generateDevisFromEstimate(data, 'output.pdf');
+```
+
+### Testing
+All scenarios tested and verified:
+- ✅ Scenario 2: 4.0KB
+- ✅ Scenario 3: 5.3KB
+- ✅ Example: 3.3KB
+

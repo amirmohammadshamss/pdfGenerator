@@ -81,8 +81,8 @@
 
 | Element | Spacing |
 |---------|---------|
-| Page margins | 50pt (≈1.76cm) |
-| Content width | 495pt (A4 width - margins) |
+| Page margins | 30pt (≈1.06cm) |
+| Content width | 535pt (A4 width - margins) |
 | Part 1 to Part 2 | 8cm (≈226pt) |
 | Part 2 to Part 3 | 2cm (≈56pt) |
 | Logo height | 4cm (≈113pt) |
@@ -92,17 +92,17 @@
 
 ## Table Column Widths
 
-The table columns are optimized to fit within the 495pt content width:
+The table columns are optimized to fit within the 535pt content width:
 
 | Column | Width | Purpose |
 |--------|-------|---------|
-| N° | 30pt | Reference number |
-| Désignation | 215pt | Description (largest column) |
-| Qté | 45pt | Quantity + unit |
-| Prix U. | 65pt | Unit price |
+| N° | 35pt | Reference number |
+| Désignation | 250pt | Description (largest column) |
+| Qté | 50pt | Quantity + unit |
+| Prix U. | 70pt | Unit price |
 | TVA | 50pt | Tax rate % |
-| TOTAL HT | 90pt | Total excluding tax |
-| **TOTAL** | **495pt** | Fits perfectly in content width |
+| TOTAL HT | 80pt | Total excluding tax |
+| **TOTAL** | **535pt** | Fits perfectly in content width |
 
 ## Color Scheme
 
@@ -167,20 +167,23 @@ The table columns are optimized to fit within the 495pt content width:
 You can customize these aspects in `generateDevis.js`:
 
 ```javascript
+// Line 192: Adjust page margins
+margin: 30, // Reduced margins for more content space
+
 // Line 207: Adjust Part 1 starting position
 const part1StartY = yPosition;
 
 // Line 251: Adjust Part 2 spacing (8cm default)
 yPosition = part1StartY + 226; // Change 226 for different spacing
 
-// Line 320: Adjust Part 3 spacing (2cm default)
+// Line 326: Adjust Part 3 spacing (2cm default)
 yPosition += 56; // Change 56 for different spacing
 
 // Line 229: Adjust logo height
 const logoHeight = 113; // 4cm, change as needed
 
-// Line 344: Adjust table column widths (must total ≤ 495 for A4)
-const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495
+// Line 344: Adjust table column widths (must total ≤ 535 for A4 with 30pt margins)
+const colWidths = [35, 250, 50, 70, 50, 80]; // Total = 535
 ```
 
 ## Comparison with Flutter Version

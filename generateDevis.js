@@ -189,7 +189,7 @@ function generateDevisFromEstimate(estimateData, outputPath = 'devis.pdf') {
 function generateDevis(data, outputPath = 'devis.pdf') {
   const doc = new PDFDocument({
     size: 'A4',
-    margin: 50,
+    margin: 30, // Reduced from 50pt to 30pt for more content space
     bufferPages: true
   });
 
@@ -200,7 +200,7 @@ function generateDevis(data, outputPath = 'devis.pdf') {
   const margin = doc.page.margins.left;
   const contentWidth = pageWidth - margin * 2;
 
-  let yPosition = 50;
+  let yPosition = 30; // Match top margin
 
   // ===== PART 1: HEADER ROW (DEVIS + LOGO) =====
   const leftColumnX = margin;
@@ -340,8 +340,8 @@ function generateDevis(data, outputPath = 'devis.pdf') {
   const tableHeaders = ['N°', 'Désignation', 'Qté', 'Prix U.', 'TVA', 'TOTAL HT'];
 
   // Calculate column widths to fit page width
-  // Total contentWidth ≈ 495 points (A4 with 50pt margins)
-  const colWidths = [30, 215, 45, 65, 50, 90]; // Total = 495
+  // Total contentWidth = 535 points (A4 595pt - 30pt margins × 2)
+  const colWidths = [35, 250, 50, 70, 50, 80]; // Total = 535
   const colPositions = [];
 
   let xPos = margin;
@@ -384,7 +384,7 @@ function generateDevis(data, outputPath = 'devis.pdf') {
     // Check if we need a new page
     if (yPosition + rowHeight > doc.page.height - 100) {
       doc.addPage();
-      yPosition = 50;
+      yPosition = 30; // Match top margin
     }
 
     if (item.level === 1) {
@@ -488,7 +488,7 @@ function generateDevis(data, outputPath = 'devis.pdf') {
   // Check if we need a new page for totals
   if (yPosition > doc.page.height - 250) {
     doc.addPage();
-    yPosition = 50;
+    yPosition = 30; // Match top margin
   }
 
   // ===== TOTALS SECTION =====

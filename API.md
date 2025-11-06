@@ -228,25 +228,26 @@ if (workItem.priceUnit > 0) {
 ## PDF Layout Customization
 
 ### Margins
-Default: 50pt (≈ 1.76cm)
+Default: 30pt (≈ 1.06cm) - Reduced for more content space
 
-Change in `generateDevis` function:
+Change in `generateDevis` function (line 192):
 ```javascript
 const doc = new PDFDocument({
   size: 'A4',
-  margin: 50,  // Change this
+  margin: 30,  // Change this (30pt = more space, 50pt = traditional)
   bufferPages: true
 });
 ```
 
 ### Column Widths
-Default: `[30, 215, 45, 65, 50, 90]` (Total = 495pt for A4)
+Default: `[35, 250, 50, 70, 50, 80]` (Total = 535pt for A4)
 
 Change in `generateDevis` function (line 344):
 ```javascript
-const colWidths = [30, 215, 45, 65, 50, 90];
-// IMPORTANT: Total must be ≤ 495pt to fit A4 page with 50pt margins
-// Adjust values as needed, but keep sum ≤ 495
+const colWidths = [35, 250, 50, 70, 50, 80];
+// IMPORTANT: Total must be ≤ 535pt to fit A4 page with 30pt margins
+// If you change margins, recalculate: contentWidth = 595 - (2 × margin)
+// Adjust values as needed, but keep sum ≤ contentWidth
 ```
 
 ### Colors

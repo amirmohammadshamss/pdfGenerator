@@ -6,38 +6,38 @@ When designing PDF tables, column widths must fit within the available content a
 
 ### A4 Page Dimensions
 - **Page width**: 595pt (21cm)
-- **Margins**: 50pt left + 50pt right = 100pt total
-- **Content width**: 595 - 100 = **495pt available**
+- **Margins**: 30pt left + 30pt right = 60pt total
+- **Content width**: 595 - 60 = **535pt available**
 
 ## Column Width Optimization
 
 ### Previous (WRONG - Overflow)
 ```javascript
 const colWidths = [40, 250, 50, 70, 60, 90];
-// Total = 560pt (EXCEEDS 495pt available!) ❌
+// Total = 560pt (EXCEEDS 535pt available!) ❌
 ```
 
 **Result**: Table extends beyond page margins, causing layout issues.
 
 ### Current (CORRECT - Fits perfectly)
 ```javascript
-const colWidths = [30, 215, 45, 65, 50, 90];
-// Total = 495pt (Fits exactly!) ✅
+const colWidths = [35, 250, 50, 70, 50, 80];
+// Total = 535pt (Fits exactly!) ✅
 ```
 
-**Result**: Table fits perfectly within page margins.
+**Result**: Table fits perfectly within page margins with reduced 30pt margins.
 
 ## Column Breakdown
 
 | Column | Width | Percentage | Content Type |
 |--------|-------|------------|--------------|
-| N° | 30pt | 6.1% | Short reference (1.1, 1.2, etc.) |
-| Désignation | 215pt | 43.4% | Longest text content |
-| Qté | 45pt | 9.1% | Quantity + unit (e.g., "10 u", "5.5 m²") |
-| Prix U. | 65pt | 13.1% | Unit price with € symbol |
-| TVA | 50pt | 10.1% | Tax rate (e.g., "20%") |
-| TOTAL HT | 90pt | 18.2% | Total with € symbol |
-| **TOTAL** | **495pt** | **100%** | Perfect fit |
+| N° | 35pt | 6.5% | Short reference (1.1, 1.2, etc.) |
+| Désignation | 250pt | 46.7% | Longest text content |
+| Qté | 50pt | 9.3% | Quantity + unit (e.g., "10 u", "5.5 m²") |
+| Prix U. | 70pt | 13.1% | Unit price with € symbol |
+| TVA | 50pt | 9.3% | Tax rate (e.g., "20%") |
+| TOTAL HT | 80pt | 15.0% | Total with € symbol |
+| **TOTAL** | **535pt** | **100%** | Perfect fit |
 
 ## Design Principles
 
@@ -173,12 +173,12 @@ const colWidths = calculateColumnWidths(contentWidth);
 ## Summary
 
 ✅ **Total column widths must equal or be less than content width**
-✅ **A4 with 50pt margins = 495pt content width**
-✅ **Current widths: [30, 215, 45, 65, 50, 90] = 495pt**
+✅ **A4 with 30pt margins = 535pt content width**
+✅ **Current widths: [35, 250, 50, 70, 50, 80] = 535pt**
 ✅ **Test with various content lengths**
 ✅ **Prioritize description column for readability**
 
 Need different page size? Adjust accordingly:
-- **Letter**: 612pt width → 512pt content (with 50pt margins)
-- **A5**: 420pt width → 320pt content (with 50pt margins)
+- **Letter**: 612pt width → 552pt content (with 30pt margins)
+- **A5**: 420pt width → 360pt content (with 30pt margins)
 - **Custom margins**: pageWidth - (2 × margin) = content width
