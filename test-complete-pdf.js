@@ -230,11 +230,21 @@ function transformNewEstimateStructure(data) {
     let roomTotal = 0;
     let itemCounter = 0;
 
+    // Calculate room total first
+    (room.listCategoryEstimate || []).forEach((cat) => {
+      (cat.listTaskEstimate || []).forEach((task) => {
+        const qty = task.Qty || 0;
+        const price = task.UnitPriceExcludingVAT || 0;
+        roomTotal += qty * price;
+      });
+    });
+
     items.push({
       no: "",
       designation: roomName,
       level: 1,
       showTotal: true,
+      totalHT: roomTotal,
     });
 
     (room.listCategoryEstimate || []).forEach((cat) => {
@@ -253,8 +263,6 @@ function transformNewEstimateStructure(data) {
         const price = task.UnitPriceExcludingVAT || 0;
         const total = qty * price;
 
-        roomTotal += total;
-
         items.push({
           no: `${roomIndex + 1}.${itemCounter + 1}`,
           designation: task.Description || task.UserTask || task.Task || "Travail",
@@ -270,14 +278,6 @@ function transformNewEstimateStructure(data) {
       });
     });
 
-    if (roomTotal > 0) {
-      items.push({
-        no: "",
-        designation: `Sous-total pour ${roomName}`,
-        totalHT: roomTotal,
-        level: 3,
-      });
-    }
   });
 
   return items;
