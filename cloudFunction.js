@@ -11,7 +11,8 @@ const PDFDocument = require("pdfkit");
 const https = require("https");
 const http = require("http");
 
-exports.generateEstimatePDFModel04 = functions.https.onRequest(async (req, res) => {
+
+exports.generateEstimatePDFModel01 = functions.https.onRequest(async (req, res) => {
   try {
     const {
       devisNumber,
@@ -39,8 +40,15 @@ exports.generateEstimatePDFModel04 = functions.https.onRequest(async (req, res) 
       discountAmount,
       travelFees,
       deliveryFees,
+      estimateDuration,
+      estimateStartDate
     } = req.body;
-
+    
+    
+console.log("estimateDuration");
+console.log(estimateDuration);
+console.log("estimateStartDate");
+console.log(estimateStartDate);
     if (!listRoomEstimate || !Array.isArray(listRoomEstimate) || listRoomEstimate.length === 0) {
       return res.status(400).json({
         success: false,
@@ -95,6 +103,8 @@ exports.generateEstimatePDFModel04 = functions.https.onRequest(async (req, res) 
       discountAmount: parseFloat(discountAmount) || 0,
       travelFees: parseFloat(travelFees) || 0,
       deliveryFees: parseFloat(deliveryFees) || 0,
+      estimateDuration: estimateDuration,
+      estimateStartDate: estimateStartDate
     };
 
     console.log(`Generating PDF for devis: ${devisNumber}`);
@@ -157,28 +167,53 @@ exports.generateEstimatePDFModel04 = functions.https.onRequest(async (req, res) 
  * @param {Object} data - full input JSON from body
  * @returns {Array} - flattened array for PDF
  */
+
+
 function transformNewEstimateStructure(data) {
   const items = [];
 
-  // Loop through rooms
   (data.listRoomEstimate || []).forEach((room, roomIndex) => {
-    const roomName = room.listCategoryEstimate[0].listTaskEstimate[0].Place;
+    let roomName = "";
     let roomTotal = 0;
-    let itemCounter = 0; // Reset counter for each room
+    let itemCounter = 0;
 
-    // Add Room Header
+    // Try to find first task that has a Place value
+    if (room.listCategoryEstimate?.length > 0) {
+      const firstCat = room.listCategoryEstimate[0];
+      if (firstCat.listTaskEstimate?.length > 0) {
+        roomName =
+          firstCat.listTaskEstimate[0].Place ||
+          firstCat.listTaskEstimate[0].Task ||
+          "";
+      }
+    }
+
+    // If no name found, fallback:
+    if (!roomName || roomName.trim() === "") {
+      roomName = room.RoomName || `Pièce ${roomIndex + 1}`;
+    }
+
+    // Compute total for this room
+    (room.listCategoryEstimate || []).forEach((cat) => {
+      (cat.listTaskEstimate || []).forEach((task) => {
+        const qty = Number(task.Qty) || 0;
+        const price = Number(task.UnitPriceExcludingVAT) || 0;
+        roomTotal += qty * price;
+      });
+    });
+
+    // Add Room row
     items.push({
       no: "",
       designation: roomName,
       level: 1,
       showTotal: true,
+      totalHT: roomTotal,
     });
 
     // Loop through categories
     (room.listCategoryEstimate || []).forEach((cat) => {
-      const catName = cat.listTaskEstimate[0].Type;
-
-      // Only add category row if catName exists and is not empty
+      const catName = cat.listTaskEstimate?.[0]?.Type;
       if (catName && catName.trim() !== "") {
         items.push({
           no: "",
@@ -188,20 +223,23 @@ function transformNewEstimateStructure(data) {
       }
 
       // Loop through tasks
-      (cat.listTaskEstimate || []).forEach((task, tIndex) => {
-        const qty = task.Qty || 0;
-        const price = task.UnitPriceExcludingVAT || 0;
+      (cat.listTaskEstimate || []).forEach((task) => {
+        const qty = Number(task.Qty) || 0;
+        const price = Number(task.UnitPriceExcludingVAT) || 0;
         const total = qty * price;
-
-        roomTotal += total;
 
         items.push({
           no: `${roomIndex + 1}.${itemCounter + 1}`,
-          designation: task.Description || task.UserTask || task.Task || "Travail",
+          designation:
+            task.Description ||
+            task.descriptionBrief ||
+            task.UserTask ||
+            task.Task ||
+            "Travail",
           quantity: qty,
           quantityUnit: task.Dimensions || "",
           unitPrice: price,
-          tva: "10%",
+          tva: task.tvaRate || "10%",
           totalHT: total,
           level: 3,
         });
@@ -209,16 +247,6 @@ function transformNewEstimateStructure(data) {
         itemCounter++;
       });
     });
-
-    // Add total line for room
-    if (roomTotal > 0) {
-      items.push({
-        no: "",
-        designation: `Sous-total pour ${roomName}`,
-        totalHT: roomTotal,
-        level: 3,
-      });
-    }
   });
 
   return items;
@@ -253,6 +281,8 @@ async function generatePDFBuffer(estimateData) {
         }
       }
 
+
+
       // Build devis data structure
       const devisData = {
         devisNumber: estimateData.devisNumber,
@@ -276,6 +306,8 @@ async function generatePDFBuffer(estimateData) {
         footerText: estimateData.footerText,
         footerTextPart2: estimateData.footerTextPart2,
         logoBuffer: logoBuffer,
+        duration: estimateData.estimateDuration,
+        startDate: estimateData.estimateStartDate,
       };
 
       // Create PDF document
@@ -312,6 +344,7 @@ async function generatePDFBuffer(estimateData) {
   });
 }
 
+
 /**
  * Generate PDF content (extracted from generateDevis.js)
  */
@@ -324,39 +357,60 @@ function generatePDFContent(doc, data) {
 
   // ===== PART 1: HEADER ROW (DEVIS + LOGO) =====
   const leftColumnX = margin;
-  const leftColumnX2 = margin + 30;
-  const rightColumnX = margin + contentWidth / 2 + 150;
-  const centrColumnX = margin + contentWidth / 2 + 20;
+  const rightColumnX = margin + contentWidth / 2 + 20;
   const part1StartY = yPosition;
 
-  const part2StartY = yPosition;
-
+  // Left side - DEVIS title, N°, Date
   doc
     .font("Helvetica-Bold")
     .fontSize(24)
     .fillColor(data.colorTemplate)
-    .text("DEVIS", rightColumnX, yPosition + 10, { align: "left" });
+    .text("DEVIS", leftColumnX, yPosition, { align: "left" });
 
-  let leftY = yPosition + 65;
+  let leftY = yPosition + 35;
 
   doc
     .font("Helvetica")
     .fontSize(11)
     .fillColor("#000000")
-    .text(`N° ${data.devisNumber}`, rightColumnX, leftY + 10, { width: contentWidth / 2 });
+    .text(`N° ${data.devisNumber}`, leftColumnX, leftY, { width: contentWidth / 2 });
 
   leftY += 15;
 
-  doc.text(`Date : ${data.date}`, rightColumnX, leftY + 10, { width: contentWidth / 2 });
+  doc.text(`Date : ${data.date}`, leftColumnX, leftY, { width: contentWidth / 2 });
+
+ leftY += 15;
+
+  // Add duration if provided
+if (data.duration && data.duration !== '' && data.duration !== null && data.duration !== undefined) {
+    doc.text(`Durée estimée à : ${data.duration}`, leftColumnX, leftY, {
+      width: contentWidth / 2,
+    });
+    leftY += 15;
+  }
+
+  // Add start date if provided and not empty
+  if (data.startDate && data.startDate !== '' && data.startDate !== null && data.startDate !== undefined) {
+    const formattedStartDate = formatStartDate(data.startDate);
+    doc.text(`Démarrage : ${formattedStartDate}`, leftColumnX, leftY, {
+      width: contentWidth / 2,
+    });
+    leftY += 15;
+  }
+
+  yPosition = Math.max(yPosition + 15, leftY);
+
+
 
   // Right side - Logo
-  const logoY = part1StartY + 75;
+  const logoY = part1StartY;
   const logoHeight = 113;
   const logoWidth = contentWidth / 2 - 40;
 
   if (data.logoBuffer) {
     try {
-      doc.image(data.logoBuffer, leftColumnX2 - 55, logoY, {
+      // Display the actual logo image
+      doc.image(data.logoBuffer, rightColumnX - 55, logoY, {
         fit: [logoWidth, logoHeight],
         align: "center",
         valign: "center",
@@ -364,58 +418,74 @@ function generatePDFContent(doc, data) {
     } catch (logoError) {
       console.warn("Failed to embed logo in PDF:", logoError.message);
     }
-  } else {
   }
   // Move 8cm below Part 1 start
-  yPosition = part1StartY + 210;
+  yPosition = part1StartY + 126;
 
-  const centerPosionX = centrColumnX - logoWidth + 60 + 60;
+  // ===== PART 2: COMPANY AND CLIENT INFO =====
+  const part2StartY = yPosition;
+
+  // Calculate heights for both boxes
+  const companyInfoHeight = 84; // 5 lines * 14 + padding
+  const clientInfoHeight = 84; // Same height for consistency
+
+  // Draw gray background for company info (left side)
+  doc
+    .fillColor("#efefef")
+    .rect(leftColumnX - 5, part2StartY - 5, contentWidth / 2 - 10, companyInfoHeight)
+    .fill();
+
+  // Draw gray background for client info (right side)
+  doc
+    .fillColor("#efefef")
+    .rect(rightColumnX - 5, part2StartY - 5, contentWidth / 2 - 10, clientInfoHeight)
+    .fill();
 
   // Left side - Company info
   doc
     .font("Helvetica-Bold")
     .fontSize(11)
     .fillColor("#000000")
-    .text(capitalizeFirst(data.companyName), centerPosionX, yPosition, {
+    .text(capitalizeFirst(data.companyName), leftColumnX, yPosition, {
       width: contentWidth / 2,
     });
 
   yPosition += 14;
 
-  doc.text(`${data.companyAddress} ${data.companyCity} ${data.companyPostalCode}`, centerPosionX, yPosition, {
+  doc.text(`${data.companyAddress} ${data.companyCity} ${data.companyPostalCode}`, leftColumnX, yPosition, {
     width: contentWidth / 2,
   });
 
   yPosition += 14;
 
-  doc.text(`SIRET : ${data.companySiret}`, centerPosionX, yPosition, {
+  doc.text(`SIRET : ${data.companySiret}`, leftColumnX, yPosition, {
     width: contentWidth / 2,
   });
 
   yPosition += 14;
 
-  doc.text(`Tél : ${data.companyTel}`, centerPosionX, yPosition, { width: contentWidth / 2 });
+  doc.text(`Tél : ${data.companyTel}`, leftColumnX, yPosition, { width: contentWidth / 2 });
 
   yPosition += 14;
 
-  doc.text(`Email : ${data.companyEmail}`, centerPosionX, yPosition, {
+  doc.text(`Email : ${data.companyEmail}`, leftColumnX, yPosition, {
     width: contentWidth / 2,
   });
 
   // Right side - Client info
-  let clientY = part2StartY + 215;
+  let clientY = part2StartY;
 
   doc
     .fillColor("#000000")
     .font("Helvetica")
     .fontSize(11)
-    .text("Client : ", leftColumnX, clientY, { continued: true })
+    .text("Client : ", rightColumnX, clientY, { continued: true })
     .font("Helvetica-Bold")
     .text(`${data.clientCivility} ${capitalizeFirst(data.clientLastName)}`);
 
   clientY += 14;
 
-  doc.text(`${data.clientCity} ${data.clientAddress}`, leftColumnX, clientY, {
+  doc.text(`${data.clientCity} ${data.clientAddress}`, rightColumnX, clientY, {
     width: contentWidth / 2,
   });
 
@@ -423,7 +493,7 @@ function generatePDFContent(doc, data) {
 
   clientY += 10;
 
-  doc.text(`N° client : ${data.clientNumber}`, leftColumnX, clientY, {
+  doc.text(`N° client : ${data.clientNumber}`, rightColumnX, clientY, {
     width: contentWidth / 2,
   });
 
@@ -473,21 +543,44 @@ function generatePDFContent(doc, data) {
   for (const item of data.items) {
     let rowHeight = 25;
 
-    if (item.designation && item.designation.length > 0) {
-      const charsPerLine = 45;
-      const estimatedLines = Math.ceil(item.designation.length / charsPerLine);
-      const newlineCount = (item.designation.match(/\n/g) || []).length;
-      const totalLines = Math.max(estimatedLines, newlineCount + 1);
+ //   if (item.designation && item.designation.length > 0) {
+   //   const charsPerLine = 45;
+  //    const estimatedLines = Math.ceil(item.designation.length / charsPerLine);
+    //  const newlineCount = (item.designation.match(/\n/g) || []).length;
+   //   const totalLines = Math.max(estimatedLines, newlineCount + 1);
 
-      if (totalLines > 1) {
-        rowHeight = 20 + totalLines * 14;
+    //  if (totalLines > 1) {
+     //   rowHeight = 20 + totalLines * 14;
+    //  }
+   // }
+   
+
+    if (item.designation && item.designation.length > 0) {
+      if (item.level === 1) {
+        doc.font("Helvetica-Bold").fontSize(12);
+      } else if (item.level === 2) {
+        doc.font("Helvetica-Bold").fontSize(11);
+      } else {
+        doc.font("Helvetica").fontSize(11);
       }
+
+      // Measure actual text height using PDFKit's heightOfString
+      const textHeight = doc.heightOfString(item.designation, {
+        width: colWidths[1] - 4,
+        lineGap: 3,
+        align: "left",
+      });
+
+      // Calculate row height based on actual text height plus padding
+      rowHeight = Math.max(25, textHeight + 14);
     }
+
 
     if (yPosition + rowHeight > doc.page.height - 100) {
       doc.addPage();
       yPosition = 30;
     }
+
 
     if (item.level === 1) {
       // Draw background with 40% opacity of colorTemplate
@@ -647,7 +740,7 @@ function generatePDFContent(doc, data) {
   // ===== TOTALS SECTION =====
   const totalsTableWidth = 160;
   const totalsStartX = pageWidth - margin - totalsTableWidth;
-  const totalsStartXLine = pageWidth - margin - totalsTableWidth / 2;
+  const totalsStartXLine = pageWidth - margin - totalsTableWidth/2;
   const totalsLabelWidth = 120;
   const totalsValueWidth = 100;
   const totalsRowHeight = 20;
@@ -704,6 +797,50 @@ function generatePDFContent(doc, data) {
     bold: true,
     fontSize: 13,
   });
+
+
+  // ===== PAYMENT CONDITIONS (Left of totals) =====
+  const paymentConditionsX = margin;
+  const paymentConditionsWidth = contentWidth - totalsTableWidth - 40;
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10)
+    .fillColor("#000000")
+    .text("Conditions de paiement", paymentConditionsX, yPosition, {
+      width: paymentConditionsWidth,
+      align: "left",
+    });
+
+  const paymentConditionsY = yPosition + 15;
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor("#000000")
+    .text(
+      "Les travaux se rapportent à des locaux d'habitation achevés depuis plus de 2 ans et ne consistent pas en des travaux exclus du taux réduit",
+      paymentConditionsX,
+      paymentConditionsY,
+      {
+        width: paymentConditionsWidth,
+        align: "left",
+        lineGap: 3,
+      }
+    );
+
+  const paymentMethodsY = paymentConditionsY + 35;
+
+  doc.text(
+    "Méthodes de paiement acceptées : Espèces, Virement bancaire.",
+    paymentConditionsX,
+    paymentMethodsY,
+    {
+      width: paymentConditionsWidth,
+      align: "left",
+      lineGap: 3,
+    }
+  );
 
   // Draw totals table
   totalsRows.forEach((row, index) => {
@@ -799,6 +936,17 @@ module.exports = exports;
  * @param {string} url - Image URL
  * @returns {Promise<Buffer>} - Image buffer
  */
+
+ function formatStartDate(microseconds) {
+  if (!microseconds) return "";
+  // Convert microseconds to milliseconds
+  const timestamp = typeof microseconds === "string" ? parseInt(microseconds) : microseconds;
+  const milliseconds = Math.floor(timestamp / 1000);
+  const date = new Date(milliseconds);
+  return date.toLocaleDateString("fr-FR");
+}
+
+
 function fetchImageFromUrl(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https") ? https : http;
@@ -846,7 +994,7 @@ function calculateTotals(items, discountPercent = 0, discountAmount = 0, travelF
   let tva20Total = 0;
 
   items.forEach((item) => {
-    if (item.totalHT) {
+    if (item.totalHT && item.no != '') {
       totalHT += item.totalHT;
 
       if (item.tva === "10%") {
@@ -856,6 +1004,7 @@ function calculateTotals(items, discountPercent = 0, discountAmount = 0, travelF
       }
     }
   });
+
 
   // Add additional fees to the total
   const travelFeesHT = travelFees || 0;
@@ -905,6 +1054,8 @@ function calculateTotals(items, discountPercent = 0, discountAmount = 0, travelF
     deliveryFees: deliveryFeesHT,
   };
 }
+
+
 
 // Helper functions
 function capitalizeFirst(str) {
